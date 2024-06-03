@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import "./App.css";
 
 type Note = {
@@ -8,30 +8,26 @@ type Note = {
 }
 
 const App = () => {
-  const [notes, setNotes] = useState<
-  Note[]
-  >([
-    {
-      id: 1,
-      title: "Note Title 1",
-      content: "Note Description"
-    },
-    {
-      id: 2,
-      title: "Note Title 2",
-      content: "Note Description"
-    },
-    {
-      id: 3,
-      title: "Note Title 3",
-      content: "Note Description"
-    }
-  ]);
+  const [notes, setNotes] = useState<Note[]>([]);
 
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
 
   const [selectedNote, setSelectedNote] = useState<Note | null>(null);
+
+  useEffect(() => {
+    const fetchNotes = async () => {
+      try {
+        const response = await fetch("http://localhost:5000/api/notes");
+        const data: Note[] = await response.json();
+        setNotes(data);
+      } catch (error) {
+        console.error("An error occurred while fetching the notes", error);
+      }
+    };
+
+    fetchNotes();
+  }, []);
 
   const handleClickNote = (note: Note) => {
     setSelectedNote(note);
@@ -39,20 +35,28 @@ const App = () => {
     setContent(note.content);
   }
 
-  const handleAddNote = (e: React.FormEvent) => 
+  const handleAddNote = async (e: React.FormEvent) => 
     {
       e.preventDefault();
-      console.log(title)
-      console.log(content)
+      try {
+        const response = await fetch("http://localhost:5000/api/notes", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+            body: JSON.stringify({
+            title: title,
+            content: content
+          })
+        });
 
-      // Creates a new note object
-      const newNote: Note = {
-        id: notes.length + 1,
-        title: title,
-        content: content
-      };
-      // Adds the new note to the notes array
-      setNotes([newNote, ...notes]);
+        const newNote = await response.json();
+        // Adds the new note to the notes array
+        setNotes([newNote, ...notes]);
+      } catch (e) {
+        console.error("An error occurred while adding the note", e);
+      }
+
       // Clears the input fields of the form
       setTitle("");
       setContent("");
