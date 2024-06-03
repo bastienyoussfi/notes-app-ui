@@ -26,7 +26,7 @@ const App = () => {
       }
     };
 
-    fetchNotes();
+  fetchNotes();
   }, []);
 
   const handleClickNote = (note: Note) => {
@@ -36,76 +36,91 @@ const App = () => {
   }
 
   const handleAddNote = async (e: React.FormEvent) => 
-    {
-      e.preventDefault();
-      try {
-        const response = await fetch("http://localhost:5000/api/notes", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json"
-          },
-            body: JSON.stringify({
-            title: title,
-            content: content
-          })
-        });
-
-        const newNote = await response.json();
-        // Adds the new note to the notes array
-        setNotes([newNote, ...notes]);
-      } catch (e) {
-        console.error("An error occurred while adding the note", e);
-      }
-
-      // Clears the input fields of the form
-      setTitle("");
-      setContent("");
-    }
-
-    const handleEditNode = (e: React.FormEvent) => 
-      {
-        e.preventDefault();
-
-        if (!selectedNote) {
-          return;
-        }
-
-        // Creates a new note object
-        const editedNote: Note = {
-          id: selectedNote!.id,
+  {
+    e.preventDefault();
+    try {
+      const response = await fetch("http://localhost:5000/api/notes", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+          body: JSON.stringify({
           title: title,
           content: content
-        };
-        
-        // Updates the notes array with the edited note
-        setNotes(notes.map((note) => 
-          note.id === editedNote.id ? editedNote : note
+        })
+      });
+
+      const newNote = await response.json();
+      // Adds the new note to the notes array
+      setNotes([newNote, ...notes]);
+    } catch (e) {
+      console.error("An error occurred while adding the note", e);
+    }
+
+    // Clears the input fields of the form
+    setTitle("");
+    setContent("");
+  }
+
+  const handleEditNode = async (e: React.FormEvent) => 
+  {
+    e.preventDefault();
+
+    if (!selectedNote) {
+      return;
+    }
+
+    try {
+      const response = await fetch(`http://localhost:5000/api/notes/${selectedNote.id}`, {
+        method: "PUT",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          title: title,
+          content: content
+        })
+      });
+
+      const editedNote = await response.json();
+      setNotes(notes.map((note) => 
+        note.id === editedNote.id ? editedNote : note
+      ));
+    } catch (e) {
+      console.error("An error occurred while editing the note", e);
+    }
+
+    setTitle("");
+    setContent("");
+    setSelectedNote(null);
+  }
+
+  const handleCancelEdit = () => 
+  {
+    setTitle("");
+    setContent("");
+    setSelectedNote(null);
+  }
+
+  const deleteNote = async (
+    event: React.MouseEvent, 
+    noteId: number) =>
+    {
+      // Prevents the event from bubbling up the DOM tree
+      event.stopPropagation();
+
+      try {
+        const response = await fetch(`http://localhost:5000/api/notes/${noteId}`, {
+          method: "DELETE"
+        });
+        // Filters out the note with the id that matches the noteId
+        setNotes(notes.filter((note) => 
+          note.id !== noteId
         ));
-
-        setTitle("");
-        setContent("");
-        setSelectedNote(null);
+      } catch (e) {
+        console.error("An error occurred while deleting the note", e);
       }
-
-      const handleCancelEdit = () => 
-        {
-          setTitle("");
-          setContent("");
-          setSelectedNote(null);
-        }
-
-        const deleteNote = (
-          event: React.MouseEvent, 
-          noteId: number) =>
-          {
-            // Prevents the event from bubbling up the DOM tree
-            event.stopPropagation();
-
-            // Filters out the note with the id that matches the noteId
-            setNotes(notes.filter((note) => 
-              note.id !== noteId
-            ));
-          }
+    }
 
   return (
     <div className="app-container">
